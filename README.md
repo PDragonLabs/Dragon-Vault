@@ -9,7 +9,7 @@ No greed. No envy. Just fire.
 ---
 
 ### ✨ Live Demo
-[https://yourusername.github.io/pdragon-vault](https://pdragonlabs.github.io/Dragon-Vault/)
+[https://pdragonlabs.github.io/pdragon-vault](https://pdragonlabs.github.io/Dragon-Vault/)
 
 (Replace `yourusername` after you deploy)
 
