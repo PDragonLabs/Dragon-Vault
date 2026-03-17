@@ -9,7 +9,7 @@ No greed. No envy. Just fire.
 ---
 
 ### ✨ Live Demo
-https://yourusername.github.io/pdragon-vault
+[https://yourusername.github.io/pdragon-vault](https://pdragonlabs.github.io/Dragon-Vault/)
 
 (Replace `yourusername` after you deploy)
 
@@ -43,4 +43,4 @@ Free for personal use. Feel free to fork and build your own vault.
 - Ko-fi Shop: https://ko-fi.com/kastcade/shop
 - X: @PDragonLabs
 
-**Built with dragon energy in Fort Worth • 2026**
+**Built with dragon energy in Dallas/Fort Worth • 2026**
