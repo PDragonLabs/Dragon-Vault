@@ -11,7 +11,7 @@ No greed. No envy. Just fire.
 ### ✨ Live Demo
 [https://pdragonlabs.github.io/pdragon-vault](https://pdragonlabs.github.io/Dragon-Vault/)
 
-(Replace `yourusername` after you deploy)
+(Replace `yourusername` & `repo` after you deploy)
 
 ### 🔥 Features
 - Full-screen 3D glowing dragon orb + fire particles (Three.js)
