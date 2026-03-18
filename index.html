@@ -9,14 +9,27 @@
     body { margin:0; overflow:hidden; background:#000; font-family:Arial,sans-serif; color:#ff4400; }
     canvas { position:absolute; top:0; left:0; }
     .overlay { position:absolute; top:0; left:0; width:100%; height:100%; z-index:10; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; pointer-events:none; }
-    .content { pointer-events:auto; max-width:800px; padding:20px; }
+    .content { pointer-events:auto; max-width:900px; padding:20px; width:100%; }
     h1 { font-size:4.2rem; margin:0; text-shadow:0 0 40px #ff4400; letter-spacing:6px; }
     .subtitle { font-size:1.6rem; margin:10px 0 20px; color:#ffaa00; }
-    .teaser { width:100%; max-width:640px; margin:20px 0; border:4px solid #ff4400; box-shadow:0 0 50px #ff4400; }
-    .unlock-btn { background:#000; color:#ff4400; border:5px solid #ff4400; padding:22px 70px; font-size:2.1rem; font-weight:bold; cursor:pointer; margin:20px 0; box-shadow:0 0 60px #ff4400; transition:all 0.4s; text-transform:uppercase; }
+    .teaser { width:100%; max-width:640px; margin:20px auto; border:4px solid #ff4400; box-shadow:0 0 50px #ff4400; display:block; }
+
+    /* HORIZONTAL CAROUSEL - the "rotation" preview */
+    .track-list {
+      display:flex; overflow-x:auto; gap:20px; padding:15px 0; scroll-behavior:smooth; -webkit-overflow-scrolling:touch;
+      scrollbar-width:none; /* hide scrollbar */
+    }
+    .track-list::-webkit-scrollbar { display:none; }
+    .track-card {
+      min-width:220px; background:#111; border:3px solid #ff4400; border-radius:12px; padding:15px; cursor:pointer;
+      transition:all 0.3s; box-shadow:0 0 20px #ff4400; text-align:center;
+    }
+    .track-card:hover { transform:scale(1.08) rotate(2deg); box-shadow:0 0 40px #ffaa00; }
+    .track-card.active { border-color:#ffaa00; box-shadow:0 0 40px #ffaa00; }
+
+    .unlock-btn { background:#000; color:#ff4400; border:5px solid #ff4400; padding:22px 70px; font-size:2.1rem; font-weight:bold; cursor:pointer; margin:20px auto; display:block; box-shadow:0 0 60px #ff4400; transition:all 0.4s; text-transform:uppercase; }
     .unlock-btn:hover { background:#ff4400; color:#000; box-shadow:0 0 90px #ffaa00; transform:scale(1.08); }
-    .want-ad { font-style:italic; font-size:1.25rem; max-width:620px; margin:20px; line-height:1.4; }
-    .next-btn { background:#111; color:#ffaa00; border:2px solid #ffaa00; padding:12px 30px; font-size:1rem; cursor:pointer; margin-top:10px; }
+    .want-ad { font-style:italic; font-size:1.25rem; max-width:620px; margin:20px auto; line-height:1.4; }
   </style>
 </head>
 <body>
@@ -27,17 +40,19 @@
       <h1>PDRAGON VAULT</h1>
       <p class="subtitle">Dallas/Fort Worth (DFW) • J.KAST.CADE aka PDragonLabs</p>
       
-      <iframe id="teaser" class="teaser" width="100%" height="166" scrolling="no" frameborder="no" allow="encrypted-media"></iframe>
+      <iframe id="teaser" class="teaser" width="100%" height="166" scrolling="no" frameborder="no"></iframe>
 
-      <p id="track-name" class="want-ad" style="font-style:normal; font-size:1.4rem; margin:15px 0;"></p>
+      <p id="track-name" class="want-ad" style="font-style:normal; font-size:1.4rem; margin:10px 0;"></p>
 
       <p class="want-ad">
         WANTED: Warriors who can handle the full uncut dragon flame.<br>
-        Casual listeners stay in the teaser. Real ones unlock below.
+        Scroll horizontally → click any card to preview.
       </p>
 
+      <!-- HORIZONTAL ROTATION CAROUSEL -->
+      <div id="track-list" class="track-list"></div>
+
       <button id="unlock-btn" class="unlock-btn">ENTER THE DEN • UNLOCK FULL TRACK</button>
-      <button class="next-btn" onclick="nextTrack()">→ NEXT DRAGON TRACK</button>
 
       <p style="margin-top:40px; font-size:0.9rem; opacity:0.7;">
         No greed. No envy. Just fire.
@@ -46,9 +61,9 @@
   </div>
 
   <script>
-    // === YOUR TRACKS (add more here anytime) ===
+    // === YOUR TRACKS — ADD NEW ONES HERE ===
     let tracks = [
-      {
+     {
         name: "F_",
         teaserUrl: "https://w.soundcloud.com/player/?url=https://soundcloud.com/pai-dj/teaser-f&color=%23ff4400&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true",
         kofiUrl: "https://ko-fi.com/s/e531145ecf",
@@ -60,30 +75,48 @@
         kofiUrl: "https://ko-fi.com/s/fec3d038df",
         fullTitle: "MoG (Full Version)"
       }
-
-
-
-      // ← ADD NEW TRACKS HERE (copy-paste the block above)
+      // ADD MORE ↓↓↓ (copy-paste block)
+      // {
+      //   name: "Song Name",
+      //   teaserUrl: "https://w.soundcloud.com/player/?url=https://soundcloud.com/pai-dj/NEW-ID...",
+      //   kofiUrl: "https://ko-fi.com/kastcade/shop/product/new-song",
+      //   fullTitle: "Song Name (Full Version)"
+      // }
     ];
 
-    let current = Math.floor(Math.random() * tracks.length);
+    let current = 0;
 
-    function loadTrack() {
-      const t = tracks[current];
+    function loadTrack(index) {
+      current = index;
+      const t = tracks[index];
       document.getElementById('teaser').src = t.teaserUrl;
-      document.getElementById('track-name').innerHTML = `${t.name}<br><small>${t.fullTitle} • Click NEXT for another dragon</small>`;
+      document.getElementById('track-name').innerHTML = t.name + "<br><small>" + t.fullTitle + "</small>";
       document.getElementById('unlock-btn').onclick = () => window.open(t.kofiUrl, '_blank');
+      
+      // Highlight active card
+      document.querySelectorAll('.track-card').forEach((c, i) => {
+        c.classList.toggle('active', i === index);
+      });
     }
 
-    function nextTrack() {
-      current = (current + 1) % tracks.length;
-      loadTrack();
+    // Build the horizontal carousel
+    function buildCarousel() {
+      const container = document.getElementById('track-list');
+      container.innerHTML = '';
+      tracks.forEach((t, i) => {
+        const card = document.createElement('div');
+        card.className = 'track-card';
+        card.innerHTML = `<strong>${t.name}</strong><br><small>${t.fullTitle}</small>`;
+        card.onclick = () => loadTrack(i);
+        container.appendChild(card);
+      });
     }
 
-    // Load first track
-    loadTrack();
+    // Start
+    buildCarousel();
+    loadTrack(0);
 
-    // === 3D DRAGON VAULT (unchanged fire) ===
+    // === 3D VAULT (same fire) ===
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({canvas: document.getElementById('bg'), antialias:true});
