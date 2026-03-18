@@ -158,5 +158,41 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
   </script>
+  <!-- 🐉 Dragon Vault - Fixed Corner Link -->
+<a href="https://github.com/PDragonLabs/Dragon-Vault" 
+   target="_blank" 
+   rel="noopener"
+   title="Dragon Vault on GitHub"
+   class="dragon-corner-link">
+  🐉
+</a>
+
+<style>
+.dragon-corner-link {
+  position: fixed;
+  top: 25px;     /* change to bottom: 25px; if you want bottom-right corner */
+  right: 25px;
+  width: 58px;
+  height: 58px;
+  font-size: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  color: #fcd34d;
+  border-radius: 50%;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  border: 3px solid #eab308;
+  z-index: 9999;
+  transition: all 0.3s ease;
+}
+
+.dragon-corner-link:hover {
+  transform: scale(1.15) rotate(15deg);
+  box-shadow: 0 15px 30px rgba(234, 179, 8, 0.4);
+  background: #1e2937;
+}
+</style>
 </body>
 </html>
