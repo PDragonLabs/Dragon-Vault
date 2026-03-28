@@ -130,8 +130,9 @@
                 <button id="closeAnalytics" style="font-size:1.8em; background:none; border:none;">×</button>
             </div>
 
-            <div id="analyticsContent" style="padding:25px; background:#f8f9fa; border-radius:12px; margin-bottom:25px; text-align:center;">
-                <p>Session data will appear here after you rate some jokes.</p>
+            <div id="analyticsContent" style="padding:25px; background:#f8f9fa; border-radius:12px; margin-bottom:30px; text-align:center;">
+                <p>Your ratings and user jokes are saved automatically in this browser.<br><br>
+                Use the buttons below to backup or restore your session.</p>
             </div>
 
             <div style="text-align: center;">
@@ -143,7 +144,7 @@
     </div>
 
     <script>
-        // Current Date
+        // Date
         function updateDateTime() {
             const dateEl = document.getElementById('currentDate');
             const now = new Date();
@@ -167,15 +168,13 @@
 
         const jokeDisplay = document.getElementById('jokeDisplay');
 
-        // Safer ID generator (fixes the btoa error)
         function getJokeId(data) {
             try {
                 let text = (data.setup || data.joke || "unknown") + (data.delivery || "");
-                // Simple hash instead of btoa to avoid invalid character errors
                 let hash = 0;
                 for (let i = 0; i < text.length; i++) {
-                    hash = (hash << 5) - hash + text.charCodeAt(i);
-                    hash = hash & hash;
+                    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+                    hash |= 0;
                 }
                 return `joke-${Math.abs(hash)}`;
             } catch (e) {
@@ -194,32 +193,76 @@
             }
         }
 
-        // Get Joke with better error handling
+        // Save / Load Session
+        function saveSession() {
+            try {
+                const data = {
+                    userJokes: userJokes,
+                    jokeRatings: JSON.parse(localStorage.getItem('jokeRatings') || '{}'),
+                    savedAt: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `joke-session-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert("✅ Session saved successfully!");
+            } catch (err) {
+                console.error("Save Session Error:", err);
+                alert("❌ Failed to save session.");
+            }
+        }
+
+        function loadSession(file) {
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (imported.userJokes) {
+                            userJokes = imported.userJokes;
+                            localStorage.setItem('userJokes', JSON.stringify(userJokes));
+                        }
+                        if (imported.jokeRatings) {
+                            localStorage.setItem('jokeRatings', JSON.stringify(imported.jokeRatings));
+                        }
+                        alert("✅ Session loaded successfully!");
+                        document.getElementById('analyticsModal').style.display = 'none';
+                    } catch (parseErr) {
+                        alert("❌ Invalid file format.");
+                    }
+                };
+                reader.readAsText(file);
+            } catch (err) {
+                console.error("Load Session Error:", err);
+                alert("❌ Failed to load session.");
+            }
+        }
+
+        // Get Joke
         async function getJoke() {
             try {
                 const category = document.getElementById('category').value;
                 jokeDisplay.innerHTML = `<div style="text-align:center;padding:70px;">Loading joke...</div>`;
 
                 let data;
-
                 if (category === "Dad") {
                     data = dadJokes[Math.floor(Math.random() * dadJokes.length)];
                     data.category = "Dad";
-                    data.type = "twopart";
                 } else if (category === "User") {
-                    if (userJokes.length === 0) throw new Error("No user jokes yet. Submit one first!");
+                    if (userJokes.length === 0) throw new Error("No user jokes yet.");
                     data = userJokes[Math.floor(Math.random() * userJokes.length)];
                     data.category = "User Submitted";
                 } else {
                     const res = await fetch(`${API_BASE}/${category}?safe-mode=true`);
-                    if (!res.ok) throw new Error("Failed to fetch from API");
-                    const apiData = await res.json();
-                    if (apiData.error) throw new Error(apiData.message || "No joke found");
-                    data = apiData;
+                    if (!res.ok) throw new Error("API request failed");
+                    data = await res.json();
+                    if (data.error) throw new Error("No joke found");
                 }
 
                 displayJoke(data);
-                console.log("✅ Joke loaded successfully");
             } catch (err) {
                 console.error("Get Joke Error:", err);
                 jokeDisplay.innerHTML = `<div style="text-align:center;padding:50px;color:rgba(255,255,255,0.8);">Error: ${err.message}</div>`;
@@ -262,8 +305,6 @@
                         alert(`Rated ${value}/5 ⭐`);
                     });
                 });
-
-                console.log("✅ Joke displayed with rating system");
             } catch (err) {
                 console.error("Display Joke Error:", err);
             }
@@ -277,21 +318,10 @@
             getJoke();
         });
 
-        document.getElementById('submitBtn').addEventListener('click', () => {
-            // Simple alert for now - you can expand later
-            alert("Submit Joke feature coming soon");
-        });
-
-        document.getElementById('laughterBtn').addEventListener('click', () => {
-            alert("Morning Laughter Yoga:\n\n1. Clap + Ho ho ha ha ha\n2. One Meter Laugh\n3. Lion Laugh\n4. Free laughter\n\nDo this daily for best effect!");
-        });
-
-        document.getElementById('analyticsBtn').addEventListener('click', () => {
-            document.getElementById('analyticsModal').style.display = 'flex';
-        });
-        document.getElementById('closeAnalytics').addEventListener('click', () => {
-            document.getElementById('analyticsModal').style.display = 'none';
-        });
+        document.getElementById('submitBtn').addEventListener('click', () => alert("Submit Joke - Coming soon"));
+        document.getElementById('laughterBtn').addEventListener('click', () => alert("Laughter Boost:\n\nTry clapping + 'Ho ho ha ha ha' for 1 minute!\nIt really helps mood."));
+        document.getElementById('analyticsBtn').addEventListener('click', () => document.getElementById('analyticsModal').style.display = 'flex');
+        document.getElementById('closeAnalytics').addEventListener('click', () => document.getElementById('analyticsModal').style.display = 'none');
 
         document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
         document.getElementById('loadSessionBtn').addEventListener('click', () => document.getElementById('importFile').click());
@@ -299,7 +329,7 @@
             if (e.target.files[0]) loadSession(e.target.files[0]);
         });
 
-        console.log("🚀 Joke Generator initialized");
+        console.log("🚀 Joke Generator started successfully");
     </script>
 </body>
 </html>
