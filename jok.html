@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 740px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: #333; font-size: 2.3em; }
+        .header .date { color: #666; font-size: 1em; margin-top: 6px; }
+
+        .subtitle { text-align: center; color: #666; margin-bottom: 35px; }
+
+        .controls { background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 30px; }
+        .control-group { margin-bottom: 18px; }
+        label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; }
+        select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; }
+
+        .button-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        #getJoke { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        #randomBtn { background: #17a2b8; color: white; }
+        #submitBtn { background: #28a745; color: white; }
+        #laughterBtn { background: #ff9800; color: white; }
+        #analyticsBtn { background: #6f42c1; color: white; }
+
+        .joke-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 35px;
+            border-radius: 15px;
+            min-height: 260px;
+            margin-bottom: 25px;
+        }
+        .joke-category { font-size: 0.95em; opacity: 0.9; margin-bottom: 12px; text-transform: uppercase; }
+        .joke-text { font-size: 1.4em; line-height: 1.55; margin-bottom: 18px; }
+        .joke-punchline { font-size: 1.3em; font-weight: bold; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.35); }
+
+        .rating-container { margin-top: 30px; text-align: center; }
+        .rating-stars { 
+            font-size: 2.6em; 
+            cursor: pointer; 
+            letter-spacing: 8px; 
+        }
+        .rating-stars span { 
+            color: #ddd; 
+            transition: color 0.2s; 
+        }
+        .rating-stars span.active, 
+        .rating-stars span:hover { 
+            color: #ffd700; 
+        }
+
+        /* Modal inside the card */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 680px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            z-index: 100;
+            overflow: hidden;
+        }
+        .modal-content {
+            padding: 30px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .session-btn {
+            background: #495057;
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.05em;
+            margin: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Joke Generator</h1>
+            <div class="date" id="currentDate"></div>
+        </div>
+        <p class="subtitle">Get jokes • Rate them • Track your humor</p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="category">🎯 Choose Category:</label>
+                <select id="category">
+                    <option value="Any">Any (Mixed)</option>
+                    <option value="General">General</option>
+                    <option value="Dad">Dad Jokes</option>
+                    <option value="Programming">Programming</option>
+                    <option value="Pun">Pun</option>
+                    <option value="Spooky">Spooky</option>
+                    <option value="Dark">Dark</option>
+                    <option value="Miscellaneous">Miscellaneous</option>
+                    <option value="User">User Submitted</option>
+                </select>
+            </div>
+
+            <div class="button-group">
+                <button id="getJoke">Get Joke</button>
+                <button id="randomBtn">🎲 Random!</button>
+            </div>
+
+            <div class="button-group" style="margin-top: 15px;">
+                <button id="submitBtn">📝 Submit Joke</button>
+                <button id="laughterBtn">😂 Laughter Boost</button>
+                <button id="analyticsBtn">📊 Analytics</button>
+            </div>
+        </div>
+
+        <div class="joke-display" id="jokeDisplay">
+            <div style="text-align:center; padding:70px 20px; color:rgba(255,255,255,0.85);">
+                Click "Get Joke" or "Random!" to begin
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Modal (now inside the container) -->
+    <div id="analyticsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Analytics & Session</h2>
+                <button id="closeAnalytics" style="font-size:1.8em; background:none; border:none; cursor:pointer;">×</button>
+            </div>
+
+            <div style="padding:25px; background:#f8f9fa; border-radius:12px; margin-bottom:25px; text-align:center;">
+                <p>Your ratings and submitted jokes are saved in this browser.<br><br>
+                Use the buttons below to backup or restore your data.</p>
+            </div>
+
+            <div style="text-align: center;">
+                <button id="saveSessionBtn" class="session-btn">💾 Save Session</button>
+                <button id="loadSessionBtn" class="session-btn">📂 Load Session</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+        </div>
+    </div>
+
+    <script>
+        // Date
+        function updateDateTime() {
+            const dateEl = document.getElementById('currentDate');
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            dateEl.textContent = now.toLocaleDateString('en-US', options);
+        }
+        updateDateTime();
+
+        // Data
+        const API_BASE = 'https://v2.jokeapi.dev/joke';
+        let userJokes = JSON.parse(localStorage.getItem('userJokes')) || [];
+
+        const dadJokes = [
+            { setup: "Why don't eggs tell jokes?", delivery: "They'd crack each other up." },
+            { setup: "Why did the scarecrow win an award?", delivery: "Because he was outstanding in his field." },
+            { setup: "I'm reading a book about anti-gravity.", delivery: "It's impossible to put down." },
+            { setup: "Why don't skeletons fight each other?", delivery: "They don't have the guts." },
+            { setup: "What do you call cheese that isn't yours?", delivery: "Nacho cheese." },
+            { setup: "Why couldn't the bicycle stand up by itself?", delivery: "It was two tired." }
+        ];
+
+        const jokeDisplay = document.getElementById('jokeDisplay');
+
+        function getJokeId(data) {
+            try {
+                let text = (data.setup || data.joke || "unknown") + (data.delivery || "");
+                let hash = 0;
+                for (let i = 0; i < text.length; i++) {
+                    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+                    hash |= 0;
+                }
+                return `joke-${Math.abs(hash)}`;
+            } catch (e) {
+                return `joke-${Date.now()}`;
+            }
+        }
+
+        function saveRating(jokeId, rating, category) {
+            try {
+                let ratings = JSON.parse(localStorage.getItem('jokeRatings') || '{}');
+                ratings[jokeId] = { rating: parseInt(rating), category, timestamp: Date.now() };
+                localStorage.setItem('jokeRatings', JSON.stringify(ratings));
+            } catch (err) {
+                console.error("Save Rating Error:", err);
+            }
+        }
+
+        // Save / Load
+        function saveSession() {
+            try {
+                const data = {
+                    userJokes: userJokes,
+                    jokeRatings: JSON.parse(localStorage.getItem('jokeRatings') || '{}'),
+                    savedAt: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `joke-session-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert("✅ Session saved successfully!");
+            } catch (err) {
+                alert("❌ Failed to save session.");
+            }
+        }
+
+        function loadSession(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported.userJokes) {
+                        userJokes = imported.userJokes;
+                        localStorage.setItem('userJokes', JSON.stringify(userJokes));
+                    }
+                    if (imported.jokeRatings) {
+                        localStorage.setItem('jokeRatings', JSON.stringify(imported.jokeRatings));
+                    }
+                    alert("✅ Session loaded successfully!");
+                    document.getElementById('analyticsModal').style.display = 'none';
+                } catch (err) {
+                    alert("❌ Invalid session file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Get Joke
+        async function getJoke() {
+            try {
+                const category = document.getElementById('category').value;
+                jokeDisplay.innerHTML = `<div style="text-align:center;padding:70px;">Loading joke...</div>`;
+
+                let data;
+                if (category === "Dad") {
+                    data = dadJokes[Math.floor(Math.random() * dadJokes.length)];
+                    data.category = "Dad";
+                } else if (category === "User") {
+                    if (userJokes.length === 0) throw new Error("No user jokes yet.");
+                    data = userJokes[Math.floor(Math.random() * userJokes.length)];
+                    data.category = "User Submitted";
+                } else {
+                    const res = await fetch(`${API_BASE}/${category}?safe-mode=true`);
+                    if (!res.ok) throw new Error("Failed to fetch joke");
+                    data = await res.json();
+                    if (data.error) throw new Error("No joke found");
+                }
+
+                displayJoke(data);
+            } catch (err) {
+                jokeDisplay.innerHTML = `<div style="text-align:center;padding:50px;color:rgba(255,255,255,0.8);">Error: ${err.message}</div>`;
+            }
+        }
+
+        function displayJoke(data) {
+            const categoryName = data.category || "General";
+            const jokeId = getJokeId(data);
+
+            let html = `
+                <div class="joke-category">📂 ${categoryName}</div>
+                <div class="joke-text">${data.setup || data.joke}</div>
+            `;
+            if (data.delivery) html += `<div class="joke-punchline">😂 ${data.delivery}</div>`;
+
+            html += `
+                <div class="rating-container">
+                    <div class="rating-stars" data-joke-id="${jokeId}" data-category="${categoryName}">
+                        <span data-value="1">★</span>
+                        <span data-value="2">★</span>
+                        <span data-value="3">★</span>
+                        <span data-value="4">★</span>
+                        <span data-value="5">★</span>
+                    </div>
+                    <p style="margin-top:12px; opacity:0.85;">Tap stars to rate</p>
+                </div>
+            `;
+
+            jokeDisplay.innerHTML = html;
+
+            const stars = document.querySelectorAll(`[data-joke-id="${jokeId}"] span`);
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    saveRating(jokeId, value, categoryName);
+                    stars.forEach((s, i) => s.classList.toggle('active', i < value));
+                    alert(`Rated ${value}/5 ⭐`);
+                });
+            });
+        }
+
+        // Button Listeners
+        document.getElementById('getJoke').addEventListener('click', getJoke);
+        document.getElementById('randomBtn').addEventListener('click', () => {
+            const cats = ['Any','General','Dad','Programming','Pun','Spooky','User'];
+            document.getElementById('category').value = cats[Math.floor(Math.random()*cats.length)];
+            getJoke();
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', () => alert("Submit Joke feature coming soon"));
+        document.getElementById('laughterBtn').addEventListener('click', () => alert("Laughter Boost:\n\nClap + 'Ho ho ha ha ha' for 1 minute to boost your mood!"));
+        document.getElementById('analyticsBtn').addEventListener('click', () => {
+            document.getElementById('analyticsModal').style.display = 'flex';
+        });
+        document.getElementById('closeAnalytics').addEventListener('click', () => {
+            document.getElementById('analyticsModal').style.display = 'none';
+        });
+
+        document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
+        document.getElementById('loadSessionBtn').addEventListener('click', () => document.getElementById('importFile').click());
+        document.getElementById('importFile').addEventListener('change', (e) => {
+            if (e.target.files[0]) loadSession(e.target.files[0]);
+        });
+
+        console.log("🚀 Joke Generator ready");
+    </script>
+</body>
+</html>
