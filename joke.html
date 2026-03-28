@@ -28,19 +28,14 @@
         .header h1 { color: #333; font-size: 2.3em; }
         .header .date { color: #666; font-size: 1em; margin-top: 6px; }
 
-        .subtitle { text-align: center; color: #666; margin-bottom: 35px; font-size: 1.05em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 35px; }
 
         .controls { background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 30px; }
         .control-group { margin-bottom: 18px; }
         label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; }
         select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em; }
 
-        .button-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
+        .button-group { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
         button {
             flex: 1;
             padding: 14px;
@@ -149,6 +144,7 @@
             </div>
         </div>
 
+        <div id="errorContainer"></div>
         <div class="joke-display" id="jokeDisplay">
             <div style="text-align:center; padding:70px 20px; color:rgba(255,255,255,0.85);">
                 Click "Get Joke" or "Random!" to begin
@@ -164,26 +160,20 @@
                 <button id="closeAnalytics" style="font-size:1.8em; background:none; border:none;">×</button>
             </div>
 
-            <div id="analyticsContent" style="padding:20px; background:#f8f9fa; border-radius:12px; margin-bottom:25px;">
-                <p style="text-align:center; color:#555; line-height:1.6;">
-                    <strong>Your Session Data</strong><br><br>
-                    • User-submitted jokes are saved automatically<br>
-                    • All ratings you give are saved in this browser<br><br>
-                    Use the buttons below to backup or restore your data.
-                </p>
+            <div id="analyticsContent" style="padding:25px; background:#f8f9fa; border-radius:12px; margin-bottom:25px; text-align:center;">
+                <p id="sessionInfo">Session data will appear here after you rate some jokes.</p>
             </div>
 
-            <div style="text-align: center; margin-top: 20px;">
+            <div style="text-align: center;">
                 <button id="saveSessionBtn" class="session-btn">💾 Save Session</button>
                 <button id="loadSessionBtn" class="session-btn">📂 Load Session</button>
             </div>
-
             <input type="file" id="importFile" accept=".json" style="display:none;">
         </div>
     </div>
 
     <script>
-        // Show current date
+        // ================== DATE ==================
         function updateDateTime() {
             const dateEl = document.getElementById('currentDate');
             const now = new Date();
@@ -192,7 +182,8 @@
         }
         updateDateTime();
 
-        // Data storage
+        // ================== DATA ==================
+        const API_BASE = 'https://v2.jokeapi.dev/joke';
         let userJokes = JSON.parse(localStorage.getItem('userJokes')) || [];
 
         const dadJokes = [
@@ -211,57 +202,63 @@
             return `custom-${btoa((data.setup || data.joke || "")).slice(0,30)}`;
         }
 
-        function saveRating(jokeId, rating, category) {
-            let ratings = JSON.parse(localStorage.getItem('jokeRatings') || '{}');
-            ratings[jokeId] = { rating: parseInt(rating), category, timestamp: Date.now() };
-            localStorage.setItem('jokeRatings', JSON.stringify(ratings));
-        }
-
-        // Save Session
+        // ================== SAVE / LOAD SESSION ==================
         function saveSession() {
-            const data = {
-                userJokes: userJokes,
-                jokeRatings: JSON.parse(localStorage.getItem('jokeRatings') || '{}'),
-                savedAt: new Date().toISOString()
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `joke-session-${new Date().toISOString().slice(0,10)}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            alert("✅ Session saved!\n\nKeep this file safe to restore later.");
-        }
-
-        // Load Session
-        function loadSession(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const imported = JSON.parse(e.target.result);
-                    if (imported.userJokes) {
-                        userJokes = imported.userJokes;
-                        localStorage.setItem('userJokes', JSON.stringify(userJokes));
-                    }
-                    if (imported.jokeRatings) {
-                        localStorage.setItem('jokeRatings', JSON.stringify(imported.jokeRatings));
-                    }
-                    alert("✅ Session loaded successfully!");
-                    document.getElementById('analyticsModal').style.display = 'none';
-                } catch (err) {
-                    alert("❌ Could not load the file. Please select a valid session backup.");
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Get Joke
-        async function getJoke() {
-            const category = document.getElementById('category').value;
-            jokeDisplay.innerHTML = `<div style="text-align:center;padding:70px;">Loading joke...</div>`;
-
             try {
+                const data = {
+                    userJokes: userJokes,
+                    jokeRatings: JSON.parse(localStorage.getItem('jokeRatings') || '{}'),
+                    savedAt: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `joke-session-${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                console.log("✅ Session saved successfully");
+                alert("✅ Session saved! File downloaded.");
+            } catch (err) {
+                console.error("Save Session Error:", err);
+                alert("❌ Failed to save session.");
+            }
+        }
+
+        function loadSession(file) {
+            try {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (imported.userJokes) {
+                            userJokes = imported.userJokes;
+                            localStorage.setItem('userJokes', JSON.stringify(userJokes));
+                        }
+                        if (imported.jokeRatings) {
+                            localStorage.setItem('jokeRatings', JSON.stringify(imported.jokeRatings));
+                        }
+                        console.log("✅ Session loaded successfully");
+                        alert("✅ Session loaded successfully!");
+                        document.getElementById('analyticsModal').style.display = 'none';
+                    } catch (parseErr) {
+                        console.error("Parse Error:", parseErr);
+                        alert("❌ Invalid session file.");
+                    }
+                };
+                reader.readAsText(file);
+            } catch (err) {
+                console.error("Load Session Error:", err);
+                alert("❌ Failed to load session.");
+            }
+        }
+
+        // ================== JOKE FUNCTIONS ==================
+        async function getJoke() {
+            try {
+                const category = document.getElementById('category').value;
+                jokeDisplay.innerHTML = `<div style="text-align:center;padding:70px;">Loading joke...</div>`;
+
                 if (category === "Dad") {
                     const joke = dadJokes[Math.floor(Math.random() * dadJokes.length)];
                     displayJoke({ category: "Dad", setup: joke.setup, delivery: joke.delivery });
@@ -271,52 +268,76 @@
                     displayJoke({ category: "User Submitted", setup: joke.setup, delivery: joke.delivery });
                 } else {
                     const res = await fetch(`${API_BASE}/${category}?safe-mode=true`);
+                    if (!res.ok) throw new Error("Failed to fetch joke");
                     const data = await res.json();
+                    if (data.error) throw new Error("No joke found");
                     displayJoke(data);
                 }
-            } catch (e) {
-                jokeDisplay.innerHTML = `<div style="text-align:center;padding:50px;">${e.message}</div>`;
+                console.log("✅ Joke loaded successfully");
+            } catch (err) {
+                console.error("Get Joke Error:", err);
+                jokeDisplay.innerHTML = `<div style="text-align:center;padding:50px;color:rgba(255,255,255,0.8);">Error: ${err.message}</div>`;
             }
         }
 
         function displayJoke(data) {
-            const categoryName = data.category || "General";
-            const jokeId = getJokeId(data);
+            try {
+                const categoryName = data.category || "General";
+                const jokeId = getJokeId(data);
 
-            let html = `
-                <div class="joke-category">📂 ${categoryName}</div>
-                <div class="joke-text">${data.setup || data.joke}</div>
-            `;
-            if (data.delivery) html += `<div class="joke-punchline">😂 ${data.delivery}</div>`;
+                let html = `
+                    <div class="joke-category">📂 ${categoryName}</div>
+                    <div class="joke-text">${data.setup || data.joke}</div>
+                `;
+                if (data.delivery) html += `<div class="joke-punchline">😂 ${data.delivery}</div>`;
 
-            html += `
-                <div class="rating-container">
-                    <div class="rating-stars" data-joke-id="${jokeId}" data-category="${categoryName}">
-                        <span data-value="1">★</span>
-                        <span data-value="2">★</span>
-                        <span data-value="3">★</span>
-                        <span data-value="4">★</span>
-                        <span data-value="5">★</span>
+                html += `
+                    <div class="rating-container">
+                        <div class="rating-stars" data-joke-id="${jokeId}" data-category="${categoryName}">
+                            <span data-value="1">★</span>
+                            <span data-value="2">★</span>
+                            <span data-value="3">★</span>
+                            <span data-value="4">★</span>
+                            <span data-value="5">★</span>
+                        </div>
+                        <p style="margin-top:12px; opacity:0.85;">Tap stars to rate</p>
                     </div>
-                    <p style="margin-top:12px; opacity:0.85;">Tap stars to rate</p>
-                </div>
-            `;
+                `;
 
-            jokeDisplay.innerHTML = html;
+                jokeDisplay.innerHTML = html;
 
-            // Star rating logic
-            const stars = document.querySelectorAll(`[data-joke-id="${jokeId}"] span`);
-            stars.forEach(star => {
-                star.addEventListener('click', () => {
-                    const value = star.getAttribute('data-value');
-                    saveRating(jokeId, value, categoryName);
-                    stars.forEach((s, i) => s.classList.toggle('active', i < value));
-                    alert(`Rated ${value}/5 ⭐`);
+                // Star rating with highlight
+                const starsContainer = document.querySelector(`[data-joke-id="${jokeId}"]`);
+                const stars = starsContainer.querySelectorAll('span');
+
+                stars.forEach(star => {
+                    star.addEventListener('click', () => {
+                        const value = parseInt(star.getAttribute('data-value'));
+                        saveRating(jokeId, value, categoryName);
+                        stars.forEach((s, i) => s.classList.toggle('active', i < value));
+                        console.log(`Rated ${value}/5 for joke ${jokeId}`);
+                        alert(`Rated ${value}/5 ⭐`);
+                    });
                 });
-            });
+
+                console.log("✅ Joke displayed with rating system");
+            } catch (err) {
+                console.error("Display Joke Error:", err);
+            }
         }
 
-        // Button Listeners
+        function saveRating(jokeId, rating, category) {
+            try {
+                let ratings = JSON.parse(localStorage.getItem('jokeRatings') || '{}');
+                ratings[jokeId] = { rating: parseInt(rating), category, timestamp: Date.now() };
+                localStorage.setItem('jokeRatings', JSON.stringify(ratings));
+                console.log(`Rating saved: ${rating}/5 for ${category}`);
+            } catch (err) {
+                console.error("Save Rating Error:", err);
+            }
+        }
+
+        // ================== BUTTON LISTENERS ==================
         document.getElementById('getJoke').addEventListener('click', getJoke);
         document.getElementById('randomBtn').addEventListener('click', () => {
             const cats = ['Any','General','Dad','Programming','Pun','Spooky','User'];
@@ -324,29 +345,53 @@
             getJoke();
         });
 
-        document.getElementById('submitBtn').addEventListener('click', () => document.getElementById('submitModal').style.display = 'flex');
+        document.getElementById('submitBtn').addEventListener('click', () => {
+            document.getElementById('submitModal').style.display = 'flex';
+        });
         document.getElementById('cancelSubmit').addEventListener('click', () => document.getElementById('submitModal').style.display = 'none');
         document.getElementById('saveJoke').addEventListener('click', () => {
-            const setup = document.getElementById('setupInput').value.trim();
-            if (!setup) return alert("Please enter a setup line");
-            userJokes.push({ setup, delivery: document.getElementById('punchlineInput').value.trim() });
-            localStorage.setItem('userJokes', JSON.stringify(userJokes));
-            alert("Joke saved!");
-            document.getElementById('submitModal').style.display = 'none';
+            try {
+                const setup = document.getElementById('setupInput').value.trim();
+                if (!setup) throw new Error("Setup line is required");
+                userJokes.push({ 
+                    setup, 
+                    delivery: document.getElementById('punchlineInput').value.trim() 
+                });
+                localStorage.setItem('userJokes', JSON.stringify(userJokes));
+                alert("Joke saved successfully!");
+                document.getElementById('submitModal').style.display = 'none';
+                console.log("✅ New joke submitted");
+            } catch (err) {
+                alert(err.message);
+            }
         });
 
-        document.getElementById('laughterBtn').addEventListener('click', () => document.getElementById('laughterModal').style.display = 'flex');
-        document.getElementById('closeLaughter').addEventListener('click', () => document.getElementById('laughterModal').style.display = 'none');
+        document.getElementById('laughterBtn').addEventListener('click', () => {
+            document.getElementById('laughterModal').style.display = 'flex';
+        });
+        document.getElementById('closeLaughter').addEventListener('click', () => {
+            document.getElementById('laughterModal').style.display = 'none';
+        });
 
-        document.getElementById('analyticsBtn').addEventListener('click', () => document.getElementById('analyticsModal').style.display = 'flex');
-        document.getElementById('closeAnalytics').addEventListener('click', () => document.getElementById('analyticsModal').style.display = 'none');
+        document.getElementById('analyticsBtn').addEventListener('click', () => {
+            document.getElementById('analyticsModal').style.display = 'flex';
+        });
+        document.getElementById('closeAnalytics').addEventListener('click', () => {
+            document.getElementById('analyticsModal').style.display = 'none';
+        });
 
-        // Save / Load
         document.getElementById('saveSessionBtn').addEventListener('click', saveSession);
         document.getElementById('loadSessionBtn').addEventListener('click', () => document.getElementById('importFile').click());
         document.getElementById('importFile').addEventListener('change', (e) => {
             if (e.target.files[0]) loadSession(e.target.files[0]);
         });
+
+        // Keyboard support
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') getJoke();
+        });
+
+        console.log("🚀 Joke Generator initialized successfully");
     </script>
 </body>
 </html>
