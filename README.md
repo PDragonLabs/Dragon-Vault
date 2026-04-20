@@ -2,7 +2,7 @@
 
 **The official gated music vault for PDragonLabs (aka J.KAST.CADE / pai-dj)**
 
-Dallas/Fort Worth (DFW) dragon fire. 30 seconds for the curious. Full uncut tracks for real supporters only.
+Dragon fire. 30 seconds for the curious. Full uncut tracks for real supporters only.
 
 No greed. No envy. Just fire.
 
